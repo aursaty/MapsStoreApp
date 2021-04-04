@@ -1,5 +1,11 @@
 <resources>
     <string name="app_name">MapStore</string>
-    <string name="empty_view_title_text">You haven\'t any maps to view</string>
-    <string name="empty_view_subtitle_text">Get started by adding a map</string>
+    <string name="empty_view_title_text_str">You haven\'t any maps to view</string>
+    <string name="empty_view_subtitle_text_str">Get started by adding a map</string>
+    <string name="map_name_str">Mushrooms map</string>
+    <string name="map_description_str">"Map description "</string>
+    <string name="create_str">Create</string>
+    <string name="cancel_str">Cancel</string>
+    <string name="create_map_str">Add new map</string>
+    <string name="no_description_str">No description</string>
 </resources>
