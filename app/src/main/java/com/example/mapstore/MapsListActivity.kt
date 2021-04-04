@@ -16,6 +16,10 @@ import androidx.fragment.app.DialogFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class MapsListActivity : AppCompatActivity() {
+    companion object {
+        val MAP_NAME_KEY = "MAP_NAME_KEY"
+        val MAP_DESCRIPTION_KEY = "MAP_DESCRIPTION_KEY"
+    }
 
     private lateinit var mapsListView: ListView
     private lateinit var emptyView: View
@@ -29,9 +33,9 @@ class MapsListActivity : AppCompatActivity() {
 
         // Setup FAB to open EditorActivity
         val fab: FloatingActionButton = findViewById(R.id.fab)
-        fab.setOnClickListener({
+        fab.setOnClickListener {
             openDialog()
-        })
+        }
 
         listViewAdapter = ArrayAdapter(this, R.layout.maps_list_item, Array(0) {})
 
@@ -58,14 +62,22 @@ class MapsListActivity : AppCompatActivity() {
             val dialogView = inflater.inflate(R.layout.dialog_create_map, null)
             builder.setView(dialogView)
                 // Add action buttons
-                .setPositiveButton(R.string.create_str,
-                    DialogInterface.OnClickListener { dialog, id ->
-                        // sign in the user ...
-                    })
-                .setNegativeButton(R.string.cancel_str,
-                    DialogInterface.OnClickListener { dialog, id ->
-                        dialog.cancel()
-                    })
+                .setPositiveButton(R.string.create_str
+                ) { dialog, id ->
+                    val mapName = mapNameEt.text.toString()
+                    val mapDesc = mapDescriptionEt.text.toString()
+
+                    if (mapName.isNotEmpty()) {
+                        val intent = Intent(context, MapActivity::class.java)
+                        intent.putExtra(MAP_NAME_KEY, mapName)
+                        intent.putExtra(MAP_DESCRIPTION_KEY, mapDesc)
+                        startActivity(intent)
+                    }
+                }
+                .setNegativeButton(R.string.cancel_str
+                ) { dialog, id ->
+                    dialog.cancel()
+                }
                 .setTitle(R.string.create_map_str)
             mapNameEt = dialogView!!.findViewById(R.id.map_name_ev)
             mapDescriptionEt = dialogView.findViewById(R.id.description_ev)

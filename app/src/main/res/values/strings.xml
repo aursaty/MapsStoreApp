@@ -8,4 +8,5 @@
     <string name="cancel_str">Cancel</string>
     <string name="create_map_str">Add new map</string>
     <string name="no_description_str">No description</string>
+    <string name="title_activity_map">Map</string>
 </resources>
