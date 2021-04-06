@@ -59,7 +59,7 @@ class MapsListActivity : AppCompatActivity() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val builder = AlertDialog.Builder(activity)
             // Get the layout inflater
-            val inflater = activity!!.layoutInflater
+            val inflater = requireActivity().layoutInflater
 
             // Inflate and set the layout for the dialog
             // Pass null as the parent view because its going in the dialog layout

@@ -1,10 +1,14 @@
 package com.example.mapstore
 
 import android.Manifest
-import android.content.pm.ComponentInfo
+import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -16,7 +20,6 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import javax.security.auth.callback.PasswordCallback
 
 class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListener,
     GoogleMap.OnMyLocationClickListener, OnMapReadyCallback,
@@ -53,6 +56,58 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
         mapFragment.getMapAsync(this)
     }
 
+    /**
+     * Manipulates the map once available.
+     * This callback is triggered when the map is ready to be used.
+     * This is where we can add markers or lines, add listeners or move the camera. In this case,
+     * we just add a marker near Sydney, Australia.
+     * If Google Play services is not installed on the device, the user will be prompted to install
+     * it inside the SupportMapFragment. This method will only be triggered once the user has
+     * installed Google Play services and returned to the app.
+     */
+    @SuppressLint("InflateParams")
+    override fun onMapReady(googleMap: GoogleMap) {
+        mMap = googleMap
+
+        enableMyLocation()
+
+        googleMap.setOnMyLocationButtonClickListener(this)
+        googleMap.setOnMyLocationClickListener(this)
+
+        googleMap.setOnMapClickListener() {
+//            allPoints.add(it)
+            val markerCreateBuilder = AlertDialog.Builder(this)
+
+            val dialogView = layoutInflater.inflate(R.layout.dialog_create_marker, null)
+            markerCreateBuilder.setView(dialogView)
+            markerCreateBuilder.setTitle("Add a new point")
+            markerCreateBuilder.setPositiveButton("Add") { dialogInterface: DialogInterface, i: Int ->
+                fun onClick(dialog: DialogInterface, id: Int) {
+                    val markerName = dialogView.findViewById<EditText>(R.id.marker_name_et).text.toString()
+                    Toast.makeText(this, "Add a new Marker", Toast.LENGTH_SHORT).show()
+
+                    if (markerName.isNotEmpty()) {
+                        // TODO saveMarker()
+                    }
+                }
+            }
+            markerCreateBuilder.setNegativeButton("Cancel") { dialogInterface: DialogInterface, i: Int ->
+                fun onClick(dialog: DialogInterface, id: Int) {
+                    finish()
+                }
+            }
+            markerCreateBuilder.show()
+
+            mMap.clear()
+            mMap.addMarker(MarkerOptions().position(it))
+        }
+
+        // Add a marker in Sydney and move the camera
+        val sydney = LatLng(-34.0, 151.0)
+        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -73,36 +128,8 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
     }
 
     /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
-    override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
-
-        enableMyLocation()
-
-        googleMap.setOnMyLocationButtonClickListener(this)
-        googleMap.setOnMyLocationClickListener(this)
-
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
-    }
-
-    /**
      * Enables the My Location layer if the fine location permission has been granted.
      */
-//    private fun enableMyLocation() {
-//        val a = arrayOf(
-//            Manifest.permission.ACCESS_FINE_LOCATION,
-//            Manifest.permission.ACCESS_COARSE_LOCATION
-//        )
 
     private fun enableMyLocation() {
         if (!::mMap.isInitialized) return

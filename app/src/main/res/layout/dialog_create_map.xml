@@ -1,28 +1,40 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
-    <EditText
-        android:id="@+id/map_name_ev"
-        android:inputType="text"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginLeft="4dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="4dp"
-        android:hint="@string/map_name_str"
-        android:importantForAutofill="no" />
-    <EditText
-        android:id="@+id/description_ev"
-        android:inputType="textLongMessage"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/map_name_ev"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="4dp"
+            android:hint="@string/map_name_str"
+            android:importantForAutofill="no"
+            android:inputType="text" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginLeft="4dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="16dp"
-        android:fontFamily="sans-serif"
-        android:hint="@string/map_description_str"
-        android:autofillHints="@string/no_description_str" />
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/description_ev"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="16dp"
+            android:autofillHints="@string/no_description_str"
+            android:fontFamily="sans-serif"
+            android:hint="@string/map_description_str"
+            android:inputType="textLongMessage" />
+    </com.google.android.material.textfield.TextInputLayout>
 </LinearLayout>
