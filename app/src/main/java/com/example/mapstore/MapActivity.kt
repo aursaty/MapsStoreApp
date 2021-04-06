@@ -3,11 +3,11 @@ package com.example.mapstore
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.content.DialogInterface
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
@@ -18,14 +18,15 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 
-class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListener,
+class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListener,
     GoogleMap.OnMyLocationClickListener, OnMapReadyCallback,
-    ActivityCompat.OnRequestPermissionsResultCallback {
+    ActivityCompat.OnRequestPermissionsResultCallback, Parcelable {
 
     private lateinit var mMap: GoogleMap
+    private lateinit var mMarkerHashMap: HashMap<String, Marker>
 
     private lateinit var mapNameTv: TextView
     private lateinit var mapDescriptionTv: TextView
@@ -34,6 +35,10 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
     private val LOCATION_PERMISSION_REQUEST_CODE = 1234
 
     private var permissionDenied = false
+
+    constructor(parcel: Parcel) : this() {
+        permissionDenied = parcel.readByte() != 0.toByte()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,37 +80,53 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
         googleMap.setOnMyLocationClickListener(this)
 
         googleMap.setOnMapClickListener() {
-//            allPoints.add(it)
+            lateinit var markerName: String
+
             val markerCreateBuilder = AlertDialog.Builder(this)
 
             val dialogView = layoutInflater.inflate(R.layout.dialog_create_marker, null)
             markerCreateBuilder.setView(dialogView)
             markerCreateBuilder.setTitle("Add a new point")
-            markerCreateBuilder.setPositiveButton("Add") { dialogInterface: DialogInterface, i: Int ->
-                fun onClick(dialog: DialogInterface, id: Int) {
-                    val markerName = dialogView.findViewById<EditText>(R.id.marker_name_et).text.toString()
+            markerCreateBuilder.setPositiveButton("Add") { dialogInterface, _ ->
+                dialogInterface.cancel()
+            }
+            markerCreateBuilder.setNegativeButton("Cancel", null)
+            val dialog = markerCreateBuilder.show()
+
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { v ->
+
+                markerName =
+                    dialogView.findViewById<EditText>(R.id.marker_name_et).text.toString()
+
+                if (markerName.isNotEmpty()) {
                     Toast.makeText(this, "Add a new Marker", Toast.LENGTH_SHORT).show()
 
-                    if (markerName.isNotEmpty()) {
-                        // TODO saveMarker()
-                    }
-                }
-            }
-            markerCreateBuilder.setNegativeButton("Cancel") { dialogInterface: DialogInterface, i: Int ->
-                fun onClick(dialog: DialogInterface, id: Int) {
-                    finish()
-                }
-            }
-            markerCreateBuilder.show()
+                    val newMarker = mMap.addMarker(MarkerOptions().position(it).title(markerName))
+                    mMarkerHashMap[markerName] = newMarker
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(it))
 
-            mMap.clear()
-            mMap.addMarker(MarkerOptions().position(it))
+                    // TODO saveMarker()
+
+                    dialog.cancel()
+                } else {
+                    Toast.makeText(this, "Enter marker name!", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            // Add a marker in Sydney and move the camera
+//            val sydney = LatLng(-34.0, 151.0)
+//            val marker: Marker = mMap.addMarker(
+//                MarkerOptions().position(sydney)
+//                    .title("Marker in Sydney")
+//            )
+            mMarkerHashMap = HashMap(0)
+//            mMarkerList.add(marker)
         }
 
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        googleMap.setOnInfoWindowClickListener {
+            it.isVisible = false
+            mMarkerHashMap.remove(it.title)
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -155,6 +176,24 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
 
     override fun onMyLocationClick(location: Location) {
         Toast.makeText(this, "Current location:\n$location", Toast.LENGTH_LONG).show()
+    }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeByte(if (permissionDenied) 1 else 0)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<MapActivity> {
+        override fun createFromParcel(parcel: Parcel): MapActivity {
+            return MapActivity(parcel)
+        }
+
+        override fun newArray(size: Int): Array<MapActivity?> {
+            return arrayOfNulls(size)
+        }
     }
 
 
