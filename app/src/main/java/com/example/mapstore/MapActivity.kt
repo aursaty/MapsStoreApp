@@ -74,7 +74,7 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        enableMyLocation()
+        checkLocationEnabled()
 
         googleMap.setOnMyLocationButtonClickListener(this)
         googleMap.setOnMyLocationClickListener(this)
@@ -129,6 +129,7 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -139,11 +140,17 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
         }
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             // Enable the my location layer if the permission has been granted.
-            enableMyLocation()
+            mMap.isMyLocationEnabled = true
         } else {
             // Permission was denied. Display an error message
             // Display the missing permission error dialog when the fragments resume.
             permissionDenied = true
+            Toast.makeText(this, "Location is disabled!", Toast.LENGTH_LONG).show()
+            // Permission to access the location is missing. Show rationale and request permission
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE
+            )
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
@@ -152,7 +159,7 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
      * Enables the My Location layer if the fine location permission has been granted.
      */
 
-    private fun enableMyLocation() {
+    private fun checkLocationEnabled() {
         if (!::mMap.isInitialized) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED
@@ -168,6 +175,7 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
     }
 
     override fun onMyLocationButtonClick(): Boolean {
+        checkLocationEnabled()
         Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show()
         // Return false so that we don't consume the event and the default behavior still occurs
         // (the camera animates to the user's current position).
