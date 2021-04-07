@@ -10,4 +10,6 @@
     <string name="no_description_str">No description</string>
     <string name="title_activity_map">Map</string>
     <string name="lake_spot_with_white_mushrooms">Lake spot with mushrooms</string>
+    <string name="marker_current_location">Marker current location</string>
+    <string name="marker_my_location">marker my location</string>
 </resources>

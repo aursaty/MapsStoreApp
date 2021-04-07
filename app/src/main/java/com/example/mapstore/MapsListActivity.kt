@@ -18,6 +18,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.textfield.TextInputEditText
 
 class MapsListActivity : AppCompatActivity() {
     companion object {
@@ -53,8 +54,8 @@ class MapsListActivity : AppCompatActivity() {
     }
 
     class CreateMapDialog : AppCompatDialogFragment() {
-        private lateinit var mapNameEt: EditText
-        private lateinit var mapDescriptionEt: EditText
+        private lateinit var mapNameEt: TextInputEditText
+        private lateinit var mapDescriptionEt: TextInputEditText
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val builder = AlertDialog.Builder(activity)

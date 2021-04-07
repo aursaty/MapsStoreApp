@@ -3,42 +3,50 @@ package com.example.mapstore
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.location.LocationManager
 import android.os.Bundle
-import android.os.Parcel
-import android.os.Parcelable
-import android.widget.EditText
-import android.widget.TextView
+import android.provider.Settings
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.mapstore.data.MarkerDao
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.textfield.TextInputEditText
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.HashMap
 
 class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListener,
     GoogleMap.OnMyLocationClickListener, OnMapReadyCallback,
-    ActivityCompat.OnRequestPermissionsResultCallback, Parcelable {
+    ActivityCompat.OnRequestPermissionsResultCallback {
+
+    private lateinit var mMapName: String
+    private lateinit var mMapDescription: String
 
     private lateinit var mMap: GoogleMap
-    private lateinit var mMarkerHashMap: HashMap<String, Marker>
-
-    private lateinit var mapNameTv: TextView
-    private lateinit var mapDescriptionTv: TextView
-
+    var mMarkerHashMap: HashMap<String, Marker> = HashMap(0)
+    private lateinit var mAddMarkerLocationBt: Button
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1234
+    private val FILE_NAME = "content.txt"
 
     private var permissionDenied = false
-
-    constructor(parcel: Parcel) : this() {
-        permissionDenied = parcel.readByte() != 0.toByte()
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,18 +55,40 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
+        mAddMarkerLocationBt = findViewById(R.id.marker_my_location_bt)
 
-        mapNameTv = findViewById(R.id.map_name_tv)
-        mapDescriptionTv = findViewById(R.id.modified_datetime_tv)
+        mMapName = intent.getStringExtra(MapsListActivity.MAP_NAME_KEY).toString()
+        mMapDescription = intent.getStringExtra(MapsListActivity.MAP_DESCRIPTION_KEY).toString()
 
-
-        val mapName = intent.getStringExtra(MapsListActivity.MAP_NAME_KEY)
-        val mapDescription = intent.getStringExtra(MapsListActivity.MAP_DESCRIPTION_KEY)
-
-        mapNameTv.text = mapName
-        mapDescriptionTv.text = mapDescription
+        title = "$mMapName's markers"
 
         mapFragment.getMapAsync(this)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.map_activity_menu, menu)
+
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val id = item.itemId
+        when (id) {
+            R.id.save_map_menu -> {
+                saveMarkers()
+                return true
+            }
+            R.id.open_settings_menu -> {
+                return true
+            }
+            R.id.clear_map_menu -> {
+                clearMarkers()
+                return true
+            }
+        }
+        //headerView.setText(item.getTitle());
+        //headerView.setText(item.getTitle());
+        return super.onOptionsItemSelected(item)
     }
 
     /**
@@ -74,58 +104,52 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        checkLocationEnabled()
-
-        googleMap.setOnMyLocationButtonClickListener(this)
-        googleMap.setOnMyLocationClickListener(this)
-
         googleMap.setOnMapClickListener() {
-            lateinit var markerName: String
 
-            val markerCreateBuilder = AlertDialog.Builder(this)
-
-            val dialogView = layoutInflater.inflate(R.layout.dialog_create_marker, null)
-            markerCreateBuilder.setView(dialogView)
-            markerCreateBuilder.setTitle("Add a new point")
-            markerCreateBuilder.setPositiveButton("Add") { dialogInterface, _ ->
-                dialogInterface.cancel()
-            }
-            markerCreateBuilder.setNegativeButton("Cancel", null)
-            val dialog = markerCreateBuilder.show()
-
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { v ->
-
-                markerName =
-                    dialogView.findViewById<EditText>(R.id.marker_name_et).text.toString()
-
-                if (markerName.isNotEmpty()) {
-                    Toast.makeText(this, "Add a new Marker", Toast.LENGTH_SHORT).show()
-
-                    val newMarker = mMap.addMarker(MarkerOptions().position(it).title(markerName))
-                    mMarkerHashMap[markerName] = newMarker
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(it))
-
-                    // TODO saveMarker()
-
-                    dialog.cancel()
-                } else {
-                    Toast.makeText(this, "Enter marker name!", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            // Add a marker in Sydney and move the camera
-//            val sydney = LatLng(-34.0, 151.0)
-//            val marker: Marker = mMap.addMarker(
-//                MarkerOptions().position(sydney)
-//                    .title("Marker in Sydney")
-//            )
-            mMarkerHashMap = HashMap(0)
-//            mMarkerList.add(marker)
+            addMarker(it)
         }
 
         googleMap.setOnInfoWindowClickListener {
             it.isVisible = false
             mMarkerHashMap.remove(it.title)
+        }
+    }
+
+    private fun addMarker(latlng: LatLng) {
+        lateinit var markerName: String
+
+        val markerCreateBuilder = AlertDialog.Builder(this)
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_create_marker, null)
+        markerCreateBuilder.setView(dialogView)
+        markerCreateBuilder.setTitle("Add a new point")
+        markerCreateBuilder.setPositiveButton("Add") { dialogInterface, _ ->
+            dialogInterface.cancel()
+        }
+        markerCreateBuilder.setNegativeButton("Cancel", null)
+        val dialog = markerCreateBuilder.show()
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { v ->
+
+            markerName =
+                dialogView.findViewById<TextInputEditText>(R.id.marker_name_et).text.toString()
+
+            if (markerName.isNotEmpty()) {
+                Toast.makeText(this, "Add a new Marker", Toast.LENGTH_SHORT).show()
+
+                val newMarker = mMap.addMarker(
+                    MarkerOptions().position(latlng).title(markerName)
+                        .snippet("For remove click on text")
+                )
+                mMarkerHashMap[markerName] = newMarker
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng))
+//                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow)
+                // TODO saveMarker()
+
+                dialog.cancel()
+            } else {
+                Toast.makeText(this, "Enter marker name!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -140,17 +164,18 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
         }
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             // Enable the my location layer if the permission has been granted.
-            mMap.isMyLocationEnabled = true
+
+            setLocation()
         } else {
             // Permission was denied. Display an error message
             // Display the missing permission error dialog when the fragments resume.
             permissionDenied = true
             Toast.makeText(this, "Location is disabled!", Toast.LENGTH_LONG).show()
-            // Permission to access the location is missing. Show rationale and request permission
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE
-            )
+//            // Permission to access the location is missing. Show rationale and request permission
+//            ActivityCompat.requestPermissions(
+//                this,
+//                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE
+//            )
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
@@ -159,24 +184,33 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
      * Enables the My Location layer if the fine location permission has been granted.
      */
 
-    private fun checkLocationEnabled() {
-        if (!::mMap.isInitialized) return
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+    private fun checkLocationPermission(): Boolean {
+        if (!::mMap.isInitialized) return false
+        return if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED
         ) {
-            mMap.isMyLocationEnabled = true
+            setLocation()
+            true
         } else {
             // Permission to access the location is missing. Show rationale and request permission
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE
             )
+            false
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private fun setLocation() {
+        mMap.setOnMyLocationButtonClickListener(this)
+        mMap.setOnMyLocationClickListener(this)
+
+        mMap.isMyLocationEnabled = true
+        mAddMarkerLocationBt.isEnabled = true
+    }
+
     override fun onMyLocationButtonClick(): Boolean {
-        checkLocationEnabled()
-        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show()
         // Return false so that we don't consume the event and the default behavior still occurs
         // (the camera animates to the user's current position).
         return false
@@ -184,25 +218,69 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
 
     override fun onMyLocationClick(location: Location) {
         Toast.makeText(this, "Current location:\n$location", Toast.LENGTH_LONG).show()
-    }
-
-    override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeByte(if (permissionDenied) 1 else 0)
-    }
-
-    override fun describeContents(): Int {
-        return 0
-    }
-
-    companion object CREATOR : Parcelable.Creator<MapActivity> {
-        override fun createFromParcel(parcel: Parcel): MapActivity {
-            return MapActivity(parcel)
-        }
-
-        override fun newArray(size: Int): Array<MapActivity?> {
-            return arrayOfNulls(size)
+        this.openFileInput("test.txt").use { stream ->
+            val text = stream.bufferedReader().use {
+                it.readText()
+            }
+            Log.d("TAG", "LOADED: $text")
         }
     }
 
+    private fun checkGpsStatus() {
+        val locationManager = this.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val gpsStatus = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        // loca
+        if (gpsStatus) {
+            Toast.makeText(this, "", Toast.LENGTH_LONG).show()
+        } else {
+            val intent1 = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(intent1)
+        }
+    }
+
+    fun markerMyLocationClick(view: View) {
+        checkLocationPermission()
+        if (!permissionDenied)
+            checkGpsStatus()
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    private fun saveMarkers() {
+        val sdf = SimpleDateFormat("dd/M/yyyy hh:mm:ss")
+        val currentDate = sdf.format(Date())
+
+        val markerHashMap = mMarkerHashMap.mapValues { MarkerDao(it.key, it.value.position.longitude, it.value.position.latitude) }.values
+//        val mapDao = MapDao(1, mMapName, mMapDescription, currentDate, markerHashMap.toList())
+
+//        val gson = Gson()
+//        val json: String = gson.toJson(mapDao)
+
+        val fileName = "test.txt"
+        val fileBody = "test"
+
+        this.openFileOutput(fileName, Context.MODE_PRIVATE).use { output ->
+            output.write(fileBody.toByteArray())
+        }
+        //
+//        val fileOutputStream: FileOutputStream
+//        try {
+//            fileOutputStream = openFileOutput(FILE_NAME, Context.MODE_PRIVATE)
+//            fileOutputStream.write(json.toByteArray())
+//        } catch (e: FileNotFoundException) {
+//            e.printStackTrace()
+//        } catch (e: NumberFormatException) {
+//            e.printStackTrace()
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//        Toast.makeText(applicationContext, "data save", Toast.LENGTH_LONG).show()
+    }
+
+    private fun clearMarkers() {
+        mMarkerHashMap.mapValues { it.value.remove() }
+        mMarkerHashMap = HashMap(0)
+    }
 
 }
