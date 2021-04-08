@@ -1,29 +1,23 @@
 package com.example.mapstore
 
-import android.Manifest
 import android.app.AlertDialog
 import android.app.Dialog
-import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.widget.Adapter
 import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDialogFragment
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.DialogFragment
+import androidx.room.Room
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 
 class MapsListActivity : AppCompatActivity() {
     companion object {
-        val MAP_NAME_KEY = "MAP_NAME_KEY"
-        val MAP_DESCRIPTION_KEY = "MAP_DESCRIPTION_KEY"
+        const val MAP_NAME_KEY = "MAP_NAME_KEY"
+        const val MAP_DESCRIPTION_KEY = "MAP_DESCRIPTION_KEY"
     }
 
     private lateinit var mapsListView: ListView
@@ -34,7 +28,10 @@ class MapsListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps_list)
 
-        // Setup FAB to open EditorActivity
+        val db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java, "database-name"
+        ).build()
 
         // Setup FAB to open EditorActivity
         val fab: FloatingActionButton = findViewById(R.id.fab)
@@ -42,7 +39,8 @@ class MapsListActivity : AppCompatActivity() {
             openDialog()
         }
 
-        listViewAdapter = ArrayAdapter(this, R.layout.maps_list_item, Array(0) {})
+        val map = db.mapDao().getAll()
+        listViewAdapter = ArrayAdapter(this, R.layout.maps_list_item, map)
 
         mapsListView = findViewById(R.id.lvPets)
         emptyView = findViewById(R.id.empty_view)
@@ -67,7 +65,8 @@ class MapsListActivity : AppCompatActivity() {
             val dialogView = inflater.inflate(R.layout.dialog_create_map, null)
             builder.setView(dialogView)
                 // Add action buttons
-                .setPositiveButton(R.string.create_str
+                .setPositiveButton(
+                    R.string.create_str
                 ) { dialog, id ->
                     val mapName = mapNameEt.text.toString()
                     val mapDesc = mapDescriptionEt.text.toString()
@@ -79,7 +78,8 @@ class MapsListActivity : AppCompatActivity() {
                         startActivity(intent)
                     }
                 }
-                .setNegativeButton(R.string.cancel_str
+                .setNegativeButton(
+                    R.string.cancel_str
                 ) { dialog, id ->
                     dialog.cancel()
                 }

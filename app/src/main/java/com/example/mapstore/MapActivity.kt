@@ -10,7 +10,6 @@ import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -19,7 +18,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.mapstore.data.MarkerDao
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -32,7 +32,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.HashMap
 
-class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListener,
+class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListener,
     GoogleMap.OnMyLocationClickListener, OnMapReadyCallback,
     ActivityCompat.OnRequestPermissionsResultCallback {
 
@@ -42,6 +42,8 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
     private lateinit var mMap: GoogleMap
     var mMarkerHashMap: HashMap<String, Marker> = HashMap(0)
     private lateinit var mAddMarkerLocationBt: Button
+
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1234
     private val FILE_NAME = "content.txt"
@@ -61,6 +63,9 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
         mMapDescription = intent.getStringExtra(MapsListActivity.MAP_DESCRIPTION_KEY).toString()
 
         title = "$mMapName's markers"
+
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         mapFragment.getMapAsync(this)
     }
@@ -104,7 +109,7 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        googleMap.setOnMapClickListener() {
+        googleMap.setOnMapClickListener {
 
             addMarker(it)
         }
@@ -217,23 +222,33 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
     }
 
     override fun onMyLocationClick(location: Location) {
-        Toast.makeText(this, "Current location:\n$location", Toast.LENGTH_LONG).show()
-        this.openFileInput("test.txt").use { stream ->
-            val text = stream.bufferedReader().use {
-                it.readText()
-            }
-            Log.d("TAG", "LOADED: $text")
-        }
+
     }
 
-    private fun checkGpsStatus() {
+    private fun checkMyGpsStatus() {
         val locationManager = this.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val gpsStatus = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        // loca
         if (gpsStatus) {
-            Toast.makeText(this, "", Toast.LENGTH_LONG).show()
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return
+            }
+            val s = locationManager.getLastKnownLocation("")
         } else {
-            val intent1 = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            val intent1 = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
             startActivity(intent1)
         }
     }
@@ -241,7 +256,7 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
     fun markerMyLocationClick(view: View) {
         checkLocationPermission()
         if (!permissionDenied)
-            checkGpsStatus()
+            checkMyGpsStatus()
     }
 
     @SuppressLint("SimpleDateFormat")
@@ -249,33 +264,13 @@ class MapActivity() : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickList
         val sdf = SimpleDateFormat("dd/M/yyyy hh:mm:ss")
         val currentDate = sdf.format(Date())
 
-        val markerHashMap = mMarkerHashMap.mapValues { MarkerDao(it.key, it.value.position.longitude, it.value.position.latitude) }.values
+//        val markerHashMap = mMarkerHashMap.mapValues { MarkerData(it.key, it.value.position.longitude, it.value.position.latitude) }.values
 //        val mapDao = MapDao(1, mMapName, mMapDescription, currentDate, markerHashMap.toList())
 
 //        val gson = Gson()
 //        val json: String = gson.toJson(mapDao)
 
-        val fileName = "test.txt"
-        val fileBody = "test"
 
-        this.openFileOutput(fileName, Context.MODE_PRIVATE).use { output ->
-            output.write(fileBody.toByteArray())
-        }
-        //
-//        val fileOutputStream: FileOutputStream
-//        try {
-//            fileOutputStream = openFileOutput(FILE_NAME, Context.MODE_PRIVATE)
-//            fileOutputStream.write(json.toByteArray())
-//        } catch (e: FileNotFoundException) {
-//            e.printStackTrace()
-//        } catch (e: NumberFormatException) {
-//            e.printStackTrace()
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-//        Toast.makeText(applicationContext, "data save", Toast.LENGTH_LONG).show()
     }
 
     private fun clearMarkers() {

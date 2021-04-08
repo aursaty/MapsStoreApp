@@ -12,4 +12,7 @@
     <string name="lake_spot_with_white_mushrooms">Lake spot with mushrooms</string>
     <string name="marker_current_location">Marker current location</string>
     <string name="marker_my_location">marker my location</string>
+    <string name="save_map">Save map</string>
+    <string name="settings">Settings</string>
+    <string name="clear_all">Clear All</string>
 </resources>
