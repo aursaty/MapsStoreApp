@@ -4,15 +4,18 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
-import android.widget.Adapter
-import android.widget.ArrayAdapter
-import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDialogFragment
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.whenStarted
+import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
+import com.example.mapstore.entity.MapData
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class MapsListActivity : AppCompatActivity() {
     companion object {
@@ -20,18 +23,14 @@ class MapsListActivity : AppCompatActivity() {
         const val MAP_DESCRIPTION_KEY = "MAP_DESCRIPTION_KEY"
     }
 
-    private lateinit var mapsListView: ListView
     private lateinit var emptyView: View
-    private lateinit var listViewAdapter: Adapter
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var recyclerViewAdapter: CustomAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps_list)
 
-        val db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "database-name"
-        ).build()
 
         // Setup FAB to open EditorActivity
         val fab: FloatingActionButton = findViewById(R.id.fab)
@@ -39,11 +38,29 @@ class MapsListActivity : AppCompatActivity() {
             openDialog()
         }
 
-        val map = db.mapDao().getAll()
-        listViewAdapter = ArrayAdapter(this, R.layout.maps_list_item, map)
-
-        mapsListView = findViewById(R.id.lvPets)
+        recyclerView = findViewById(R.id.mapsRecyclerView)
         emptyView = findViewById(R.id.empty_view)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("MLA", "in onResume")
+//        lifecycleScope.launch {
+//            whenStarted {
+            val db = AppDatabase.getInstance(context = applicationContext)
+
+            val mapsArray = db!!.mapDao().getAll().toTypedArray()
+
+            Log.d("MLA", mapsArray.toString())
+            recyclerViewAdapter = CustomAdapter(mapsArray)
+            recyclerView.adapter = recyclerViewAdapter
+
+            if (mapsArray.isEmpty()) {
+                recyclerView.visibility = View.GONE
+                emptyView.visibility = View.VISIBLE
+            }
+//            }
+//        }
     }
 
     private fun openDialog() {
@@ -91,3 +108,4 @@ class MapsListActivity : AppCompatActivity() {
         }
     }
 }
+

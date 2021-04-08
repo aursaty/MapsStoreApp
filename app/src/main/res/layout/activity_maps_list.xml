@@ -5,8 +5,8 @@
     android:layout_height="match_parent"
     tools:context=".MapsListActivity">
 
-    <ListView
-        android:id="@+id/lvPets"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/mapsRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
