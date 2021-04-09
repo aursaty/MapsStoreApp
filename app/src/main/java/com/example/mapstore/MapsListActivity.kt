@@ -8,14 +8,13 @@ import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDialogFragment
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.whenStarted
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.room.Room
 import com.example.mapstore.entity.MapData
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
-import kotlinx.coroutines.launch
 
 class MapsListActivity : AppCompatActivity() {
     companion object {
@@ -25,7 +24,10 @@ class MapsListActivity : AppCompatActivity() {
 
     private lateinit var emptyView: View
     private lateinit var recyclerView: RecyclerView
-    private lateinit var recyclerViewAdapter: CustomAdapter
+    private lateinit var mapsAdapter: CustomAdapter
+    private var mMapsList: MutableList<MapData> = emptyList<MapData>().toMutableList()
+
+    private lateinit var mUserViewModel: MapViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,27 +41,43 @@ class MapsListActivity : AppCompatActivity() {
         }
 
         recyclerView = findViewById(R.id.mapsRecyclerView)
-        emptyView = findViewById(R.id.empty_view)
+        mapsAdapter = CustomAdapter(mMapsList)
+        recyclerView.adapter = mapsAdapter
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
     }
 
     override fun onResume() {
         super.onResume()
         Log.d("MLA", "in onResume")
-//        lifecycleScope.launch {
 //            whenStarted {
-            val db = AppDatabase.getInstance(context = applicationContext)
+//        val db = AppDatabase.getInstance(context = applicationContext)
 
-            val mapsArray = db!!.mapDao().getAll().toTypedArray()
-
-            Log.d("MLA", mapsArray.toString())
-            recyclerViewAdapter = CustomAdapter(mapsArray)
-            recyclerView.adapter = recyclerViewAdapter
-
-            if (mapsArray.isEmpty()) {
-                recyclerView.visibility = View.GONE
-                emptyView.visibility = View.VISIBLE
+        mUserViewModel = ViewModelProvider(this).get(MapViewModel::class.java)
+        mUserViewModel.readAllData.observe(this, Observer { data ->
+            mapsAdapter.addAll(data)
+//            runOnUiThread { mapsAdapter.notifyDataSetChanged() }
+            if (data.isNotEmpty()) {
+//                emptyView.visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
             }
-//            }
+        })
+
+//        val mapsDbArray = db!!.mapDao().getAll().toTypedArray()
+
+//        val a = AppDatabase.getAllAsyncTask(mapsDB = db!!).execute().get()
+//        mMapsArray = a!!
+//        recyclerViewAdapter.notifyDataSetChanged()
+////        Log.d("MLA", mapsDbArray.toString())
+//
+//        if (mMapsArray.isEmpty()) {
+//            recyclerView.visibility = View.GONE
+//            emptyView.visibility = View.VISIBLE
+//        } else {
+//            recyclerView.visibility = View.VISIBLE
+//            emptyView.visibility = View.VISIBLE
+//
+//            recyclerViewAdapter.notifyDataSetChanged()
 //        }
     }
 

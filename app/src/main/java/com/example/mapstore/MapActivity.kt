@@ -18,6 +18,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.mapstore.entity.MapData
 import com.example.mapstore.entity.MarkerData
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -45,8 +47,8 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
     var mMarkerHashMap: HashMap<String, Marker> = HashMap(0)
     private lateinit var mAddMarkerLocationBt: Button
 
+    private lateinit var mMapViewModel: MapViewModel
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var database: AppDatabase
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1234
     private val FILE_NAME = "content.txt"
@@ -56,8 +58,6 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
-
-        database = AppDatabase.getInstance(context = applicationContext)!!
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
@@ -71,6 +71,8 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
 
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        mMapViewModel = ViewModelProvider(this).get(MapViewModel::class.java)
 
         mapFragment.getMapAsync(this)
     }
@@ -269,15 +271,21 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
         val sdf = SimpleDateFormat("dd/M/yyyy hh:mm:ss")
         val currentDate = sdf.format(Date())
 
-        val markerHashMap = mMarkerHashMap.mapValues { MarkerData(it.key, it.value.position.longitude, it.value.position.latitude) }.values
-        val mapData = MapData(2, mMapName, mMapDescription, currentDate)//, markerHashMap.toList())
+        val markerHashMap = mMarkerHashMap.mapValues {
+            MarkerData(
+                it.key,
+                it.value.position.longitude,
+                it.value.position.latitude
+            )
+        }.values
+        val mapData = MapData(
+            name = mMapName,
+            description = mMapDescription,
+            createdDatetime = currentDate
+        )//, markerHashMap.toList())
 
-        database.mapDao().insert(mapData)
+        mMapViewModel.addMap(mapData)
         finish()
-//        val gson = Gson()
-//        val json: String = gson.toJson(mapDao)
-
-
     }
 
     private fun clearMarkers() {

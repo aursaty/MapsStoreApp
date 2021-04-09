@@ -11,21 +11,29 @@ import com.example.mapstore.entity.MapData
 @Database(entities = [MapData::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
 
+    abstract fun mapDao(): MapDao
+
     companion object {
-        //    @Volatile
-        private var appDatabase: AppDatabase? = null
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
+        private const val DB_NAME = "database.db"
 
-        //    @Synchronized
-        fun getInstance(context: Context): AppDatabase? {
-            if (appDatabase == null) appDatabase = create(context)
-            return appDatabase
-        }
+        fun getInstance(context: Context): AppDatabase {
+            val tempInstance = INSTANCE
+            if (tempInstance != null)
+                return tempInstance
 
-        private const val DB_NAME = "Database.db"
-        fun create(context: Context): AppDatabase? {
-            return Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME).allowMainThreadQueries().build()
+            synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context,
+                    AppDatabase::class.java,
+                    DB_NAME
+                ).build()
+                INSTANCE = instance
+                return instance
+            }
         }
     }
 
-    abstract fun mapDao(): MapDao
 }
+

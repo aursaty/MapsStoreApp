@@ -7,20 +7,32 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mapstore.entity.MapData
 
-class CustomAdapter(private val dataSet: Array<MapData>) : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
+class CustomAdapter(private val mapDataList: MutableList<MapData>) : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
 
+//    private var mapList = emptyList<MapData>()
+
+    fun add(mapData: MapData) {
+        mapDataList.add(mapData)
+        this.notifyDataSetChanged()
+    }
+
+    fun addAll(mapDataList: List<MapData>) {
+        this.mapDataList.clear()
+        this.mapDataList.addAll(mapDataList)
+        this.notifyDataSetChanged()
+    }
     /**
      * Provide a reference to the type of views that you are using
      * (custom ViewHolder).
      */
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        lateinit var textView: TextView
-        lateinit var datimeView: TextView
+        lateinit var mapNameView: TextView
+        lateinit var datetimeView: TextView
 
         init {
             // Define click listener for the ViewHolder's View.
-            textView = view.findViewById(R.id.map_name_tv)
-            datimeView = view.findViewById(R.id.edit_datetime_tv)
+            mapNameView = view.findViewById(R.id.map_name_tv)
+            datetimeView = view.findViewById(R.id.edit_datetime_tv)
         }
     }
 
@@ -38,11 +50,11 @@ class CustomAdapter(private val dataSet: Array<MapData>) : RecyclerView.Adapter<
 
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
-        viewHolder.textView.text = dataSet[position].name
-        viewHolder.datimeView.text = dataSet[position].createdDatetime
+        viewHolder.mapNameView.text = mapDataList[position].name
+        viewHolder.datetimeView.text = mapDataList[position].createdDatetime
     }
 
     // Return the size of your dataset (invoked by the layout manager)
-    override fun getItemCount() = dataSet.size
+    override fun getItemCount() = mapDataList.size
 
 }

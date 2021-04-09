@@ -1,18 +1,19 @@
 package com.example.mapstore.dao
 
+import androidx.lifecycle.LiveData
 import androidx.room.*
 import com.example.mapstore.entity.MapData
 
 @Dao
 interface MapDao {
     @Query("SELECT * FROM maps")
-    fun getAll(): List<MapData>
+    fun getAll(): LiveData<List<MapData>> // list on youtube
 
     @Query("SELECT * FROM maps WHERE id =(:mapId)")
     fun loadAllByIds(mapId: Int): MapData
 
     @Insert
-    fun insert(map: MapData)
+    suspend fun insert(map: MapData)
 
     @Update
     fun update(map: MapData)
