@@ -2,7 +2,7 @@ package com.example.mapstore.dao
 
 import androidx.lifecycle.LiveData
 import androidx.room.*
-import com.example.mapstore.entity.MapData
+import com.example.mapstore.model.MapData
 
 @Dao
 interface MapDao {
@@ -10,7 +10,7 @@ interface MapDao {
     fun getAll(): LiveData<List<MapData>> // list on youtube
 
     @Query("SELECT * FROM maps WHERE id =(:mapId)")
-    fun loadAllByIds(mapId: Int): MapData
+    fun getById(mapId: Int): MapData
 
     @Insert
     suspend fun insert(map: MapData)

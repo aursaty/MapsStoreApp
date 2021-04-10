@@ -1,8 +1,8 @@
-package com.example.mapstore
+package com.example.mapstore.repository
 
 import androidx.lifecycle.LiveData
 import com.example.mapstore.dao.MapDao
-import com.example.mapstore.entity.MapData
+import com.example.mapstore.model.MapData
 
 class MapRepository(private val mapDao: MapDao) {
 
@@ -10,5 +10,9 @@ class MapRepository(private val mapDao: MapDao) {
 
     suspend fun addMap(mapData: MapData) {
         mapDao.insert(mapData)
+    }
+
+    suspend fun getMapById(id: Int): MapData {
+        return mapDao.getById(id)
     }
 }

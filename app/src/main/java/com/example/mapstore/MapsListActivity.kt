@@ -12,15 +12,22 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.mapstore.entity.MapData
+import com.example.mapstore.model.MapData
+import com.example.mapstore.viewmodel.MapViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 
 class MapsListActivity : AppCompatActivity() {
     companion object {
+        const val ACTION_KEY = "ACTION_KEY"
+        const val MAP_ID_KEY = "MAP_ID_KEY"
         const val MAP_NAME_KEY = "MAP_NAME_KEY"
+        const val MARKERS_KEY = "MARKERS_KEY"
         const val MAP_DESCRIPTION_KEY = "MAP_DESCRIPTION_KEY"
+        const val CREATE = "CREATE"
+        const val UPDATE = "UPDATE"
     }
+
 
     private lateinit var emptyView: View
     private lateinit var recyclerView: RecyclerView
@@ -68,7 +75,7 @@ class MapsListActivity : AppCompatActivity() {
 //        val a = AppDatabase.getAllAsyncTask(mapsDB = db!!).execute().get()
 //        mMapsArray = a!!
 //        recyclerViewAdapter.notifyDataSetChanged()
-////        Log.d("MLA", mapsDbArray.toString())
+//        Log.d("MLA", mapsDbArray.toString())
 //
 //        if (mMapsArray.isEmpty()) {
 //            recyclerView.visibility = View.GONE
@@ -108,6 +115,7 @@ class MapsListActivity : AppCompatActivity() {
 
                     if (mapName.isNotEmpty()) {
                         val intent = Intent(context, MapActivity::class.java)
+                        intent.putExtra(ACTION_KEY, CREATE)
                         intent.putExtra(MAP_NAME_KEY, mapName)
                         intent.putExtra(MAP_DESCRIPTION_KEY, mapDesc)
                         startActivity(intent)

@@ -18,10 +18,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.mapstore.entity.MapData
-import com.example.mapstore.entity.MarkerData
+import com.example.mapstore.MapsListActivity.Companion.UPDATE
+import com.example.mapstore.model.MarkerData
+import com.example.mapstore.model.MapData
+import com.example.mapstore.viewmodel.MapViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -43,12 +44,18 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
     private lateinit var mMapName: String
     private lateinit var mMapDescription: String
 
+    // ViewModel DB
+    private lateinit var mUserViewModel: MapViewModel
+    private var mMapId: Int = 0
+
     private lateinit var mMap: GoogleMap
     var mMarkerHashMap: HashMap<String, Marker> = HashMap(0)
     private lateinit var mAddMarkerLocationBt: Button
 
     private lateinit var mMapViewModel: MapViewModel
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private lateinit var mAction: String
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1234
     private val FILE_NAME = "content.txt"
@@ -64,17 +71,34 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
             .findFragmentById(R.id.map) as SupportMapFragment
         mAddMarkerLocationBt = findViewById(R.id.marker_my_location_bt)
 
-        mMapName = intent.getStringExtra(MapsListActivity.MAP_NAME_KEY).toString()
+        mAction = intent.getStringExtra(MapsListActivity.ACTION_KEY).toString()
+        val a = intent.getStringExtra(MapsListActivity.MAP_NAME_KEY).toString()
+        mMapName = a
         mMapDescription = intent.getStringExtra(MapsListActivity.MAP_DESCRIPTION_KEY).toString()
-
         title = "$mMapName's markers"
-
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         mMapViewModel = ViewModelProvider(this).get(MapViewModel::class.java)
 
         mapFragment.getMapAsync(this)
+    }
+
+    private fun showSavedMarkers(markerList: List<MarkerData>?) {
+        val markers = emptyMap<String, LatLng>().toMutableMap()
+        markerList!!.forEach { markerData ->
+            markers[markerData.name] = LatLng(markerData.lat, markerData.long)
+        }
+        markers.forEach {
+            val newMarker = mMap.addMarker(
+                MarkerOptions().position(it.value).title(it.key)
+                    .snippet("For remove click on text")
+            )
+            mMarkerHashMap[it.key] = newMarker
+        }
+
+        mUserViewModel = ViewModelProvider(this).get(MapViewModel::class.java)
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -98,8 +122,6 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
                 return true
             }
         }
-        //headerView.setText(item.getTitle());
-        //headerView.setText(item.getTitle());
         return super.onOptionsItemSelected(item)
     }
 
@@ -125,6 +147,17 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
             it.isVisible = false
             mMarkerHashMap.remove(it.title)
         }
+
+        if (mAction == UPDATE) {
+            mMapId = intent.getIntExtra(MapsListActivity.MAP_ID_KEY, 0)
+            val markerList = intent.getStringExtra(MapsListActivity.MARKERS_KEY)?.let {
+                MapData.DataConverter.toCountryLangList(
+                    it
+                )
+            }
+            showSavedMarkers(markerList)
+        }
+
     }
 
     private fun addMarker(latlng: LatLng) {
@@ -155,8 +188,6 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
                 )
                 mMarkerHashMap[markerName] = newMarker
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng))
-//                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow)
-                // TODO saveMarker()
 
                 dialog.cancel()
             } else {
@@ -273,18 +304,20 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
 
         val markerHashMap = mMarkerHashMap.mapValues {
             MarkerData(
-                it.key,
-                it.value.position.longitude,
-                it.value.position.latitude
+                name = it.key,
+                long = it.value.position.longitude,
+                lat = it.value.position.latitude
             )
         }.values
         val mapData = MapData(
             name = mMapName,
             description = mMapDescription,
-            createdDatetime = currentDate
-        )//, markerHashMap.toList())
+            createdDatetime = currentDate,
+            pointsMap = markerHashMap.toList()
+        )
 
-        mMapViewModel.addMap(mapData)
+        if (mAction == MapsListActivity.CREATE)
+            mMapViewModel.addMap(mapData)
         finish()
     }
 
