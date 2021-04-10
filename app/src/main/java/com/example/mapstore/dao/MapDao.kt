@@ -12,12 +12,16 @@ interface MapDao {
     @Query("SELECT * FROM maps WHERE id =(:mapId)")
     fun getById(mapId: Int): MapData
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(map: MapData)
 
-    @Update
-    fun update(map: MapData)
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun update(map: MapData)
 
     @Query("DELETE FROM maps WHERE id =(:mapId)")
-    fun delete(mapId: Int)
+    suspend fun deleteMap(mapId: Int)
+
+    @Query("DELETE FROM maps")
+    suspend fun deleteAllFromMaps()
+
 }

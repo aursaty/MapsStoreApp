@@ -12,7 +12,19 @@ class MapRepository(private val mapDao: MapDao) {
         mapDao.insert(mapData)
     }
 
+    suspend fun updateMap(mapData: MapData) {
+        mapDao.update(mapData)
+    }
+
     suspend fun getMapById(id: Int): MapData {
         return mapDao.getById(id)
+    }
+
+    suspend fun deleteMapById(id: Int) {
+        return mapDao.deleteMap(id)
+    }
+
+    suspend fun deleteAllFromMaps() {
+        return mapDao.deleteAllFromMaps()
     }
 }

@@ -5,6 +5,8 @@ import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDialogFragment
@@ -86,6 +88,43 @@ class MapsListActivity : AppCompatActivity() {
 //
 //            recyclerViewAdapter.notifyDataSetChanged()
 //        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.mapslist_activity_menu, menu)
+
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val id = item.itemId
+        when (id) {
+            R.id.sort_maps_menu -> {
+                return true
+            }
+            R.id.delete_maps_menu -> {
+                deleteAllMaps()
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun deleteAllMaps() {
+        val markerCreateBuilder = AlertDialog.Builder(this)
+
+//        val dialogView = layoutInflater.inflate(R.layout.dialog_create_marker, null)
+        markerCreateBuilder.setTitle("Are you sure want to delete all maps?")
+        markerCreateBuilder.setPositiveButton("Delete") { dialogInterface, _ ->
+            dialogInterface.cancel()
+        }
+        markerCreateBuilder.setNegativeButton("Cancel", null)
+        val dialog = markerCreateBuilder.show()
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { v ->
+            mUserViewModel.deleteAllFromMaps()
+            dialog.cancel()
+        }
     }
 
     private fun openDialog() {

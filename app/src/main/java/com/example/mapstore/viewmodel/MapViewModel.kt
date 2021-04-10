@@ -30,9 +30,27 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateMap(map: MapData) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.updateMap(map)
+        }
+    }
+
     fun getMapById(id: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.getMapById(id)
+        }
+    }
+
+    fun deleteMapById(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteMapById(id)
+        }
+    }
+
+    fun deleteAllFromMaps() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteAllFromMaps()
         }
     }
 

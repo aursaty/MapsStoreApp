@@ -15,4 +15,7 @@
     <string name="save_map">Save map</string>
     <string name="settings">Settings</string>
     <string name="clear_all">Clear All</string>
+    <string name="delete_map">Delete map</string>
+    <string name="sort_maps">Sort maps</string>
+    <string name="delete_all_maps">Delete all maps</string>
 </resources>
