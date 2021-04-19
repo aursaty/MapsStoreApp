@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
@@ -46,7 +47,7 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
 
     // ViewModel DB
     private lateinit var mUserViewModel: MapViewModel
-    private var mMapId: Int = 0
+    private var mMapId: Int = -1
 
     private lateinit var mMap: GoogleMap
     var mMarkerHashMap: HashMap<String, Marker> = HashMap(0)
@@ -61,7 +62,6 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
     private val FILE_NAME = "content.txt"
 
     private var permissionDenied = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
@@ -72,8 +72,7 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
         mAddMarkerLocationBt = findViewById(R.id.marker_my_location_bt)
 
         mAction = intent.getStringExtra(MapsListActivity.ACTION_KEY).toString()
-        val a = intent.getStringExtra(MapsListActivity.MAP_NAME_KEY).toString()
-        mMapName = a
+        mMapName = intent.getStringExtra(MapsListActivity.MAP_NAME_KEY).toString()
         mMapDescription = intent.getStringExtra(MapsListActivity.MAP_DESCRIPTION_KEY).toString()
         title = "$mMapName's markers"
 
@@ -82,6 +81,18 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
         mMapViewModel = ViewModelProvider(this).get(MapViewModel::class.java)
 
         mapFragment.getMapAsync(this)
+    }
+
+    override fun onBackPressed() {
+        val backDialogBuilder = AlertDialog.Builder(this)
+
+        backDialogBuilder.setMessage("Your chanes have no been saved")
+        backDialogBuilder.setPositiveButton("Save", null)
+        backDialogBuilder.setNegativeButton("Discard") {
+                _, _ ->
+            super.onBackPressed()
+        }
+        backDialogBuilder.show()
     }
 
     private fun showSavedMarkers(markerList: List<MarkerData>?) {
@@ -114,15 +125,38 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
                 saveMarkers()
                 return true
             }
-            R.id.open_settings_menu -> {
-                return true
-            }
             R.id.clear_map_menu -> {
                 clearMarkers()
                 return true
             }
+            R.id.delete_map_menu -> {
+                deleteMap()
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun deleteMap() {
+        val markerCreateBuilder = AlertDialog.Builder(this)
+
+//        val dialogView = layoutInflater.inflate(R.layout.dialog_create_marker, null)
+        markerCreateBuilder.setTitle("Are you sure want to delete $mMapName?")
+        markerCreateBuilder.setPositiveButton("Delete") { dialogInterface, _ ->
+            dialogInterface.cancel()
+        }
+        markerCreateBuilder.setNegativeButton("Cancel", null)
+        val dialog = markerCreateBuilder.show()
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { v ->
+            if (mAction == MapsListActivity.CREATE) {
+                finish()
+            } else {
+                mUserViewModel.deleteMapById(mMapId)
+                finish()
+            }
+            dialog.cancel()
+        }
     }
 
     /**
@@ -139,7 +173,6 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
         mMap = googleMap
 
         googleMap.setOnMapClickListener {
-
             addMarker(it)
         }
 
@@ -260,7 +293,7 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
     }
 
     override fun onMyLocationClick(location: Location) {
-
+        addMarker(LatLng(location.latitude, location.longitude))
     }
 
     private fun checkMyGpsStatus() {
@@ -284,7 +317,7 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
                 // for ActivityCompat#requestPermissions for more details.
                 return
             }
-            val s = locationManager.getLastKnownLocation("")
+
         } else {
             val intent1 = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
             startActivity(intent1)
@@ -309,15 +342,25 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
                 lat = it.value.position.latitude
             )
         }.values
-        val mapData = MapData(
-            name = mMapName,
-            description = mMapDescription,
-            createdDatetime = currentDate,
-            pointsMap = markerHashMap.toList()
-        )
 
-        if (mAction == MapsListActivity.CREATE)
+        if (mAction == MapsListActivity.CREATE) {
+            val mapData = MapData(
+                name = mMapName,
+                description = mMapDescription,
+                createdDatetime = currentDate,
+                pointsMap = markerHashMap.toList()
+            )
             mMapViewModel.addMap(mapData)
+        } else {
+            val mapData = MapData(
+                id = mMapId,
+                name = mMapName,
+                description = mMapDescription,
+                createdDatetime = currentDate,
+                pointsMap = markerHashMap.toList()
+            )
+            mMapViewModel.updateMap(mapData)
+        }
         finish()
     }
 
