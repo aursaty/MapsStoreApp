@@ -13,6 +13,7 @@
     <string name="marker_current_location">Marker current location</string>
     <string name="marker_my_location">marker my location</string>
     <string name="save_map">Save map</string>
+    <string name="gps_permissions">GPS permissions</string>
     <string name="settings">Settings</string>
     <string name="clear_all">Clear All</string>
     <string name="delete_map">Delete map</string>
