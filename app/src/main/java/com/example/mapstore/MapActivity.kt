@@ -87,8 +87,8 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMyLocationButtonClickListen
         val backDialogBuilder = AlertDialog.Builder(this)
 
         backDialogBuilder.setMessage("Your chanes have no been saved")
-        backDialogBuilder.setPositiveButton("Save", null)
-        backDialogBuilder.setNegativeButton("Discard") {
+        backDialogBuilder.setNegativeButton("Cancel", null)
+        backDialogBuilder.setPositiveButton("Discard") {
                 _, _ ->
             super.onBackPressed()
         }
